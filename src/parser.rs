@@ -14,7 +14,7 @@ pub struct Ast {
     pub nodes: Vec<AstNode>,
 }
 
-pub struct Parser {}
+pub struct Parser;
 
 impl Parser {
     #[allow(clippy::new_without_default)]

@@ -13,7 +13,7 @@ pub struct TokenStream {
     pub tokens: Vec<Token>,
 }
 
-pub struct Lexer {}
+pub struct Lexer;
 
 impl Lexer {
     #[allow(clippy::new_without_default)]

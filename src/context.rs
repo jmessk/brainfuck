@@ -1,3 +1,5 @@
+use std::io::Read as _;
+
 use crate::parser::{Ast, AstNode};
 
 pub struct Context {
@@ -7,10 +9,7 @@ pub struct Context {
 
 impl Default for Context {
     fn default() -> Self {
-        Context {
-            memory: vec![0; 1024],
-            pointer: 0,
-        }
+        Context::with_mem_size(10_000)
     }
 }
 
@@ -23,14 +22,13 @@ impl Context {
     }
 
     pub fn eval(&mut self, ast: &Ast) -> anyhow::Result<()> {
-        // println!("{}\n{}", self.pointer, self.memory[self.pointer]);
         for node in &ast.nodes {
             match node {
                 AstNode::IncrementValue => self.increment_value()?,
                 AstNode::DecrementValue => self.decrement_value()?,
                 AstNode::IncrementPointer => self.increment_pointer()?,
                 AstNode::DecrementPointer => self.decrement_pointer()?,
-                AstNode::Loop(loop_nodes) => self.eval_loop(loop_nodes)?,
+                AstNode::Loop(ast) => self.eval_loop(ast)?,
                 AstNode::Input => self.input()?,
                 AstNode::Output => self.output()?,
             }
@@ -40,57 +38,57 @@ impl Context {
     }
 
     fn increment_value(&mut self) -> anyhow::Result<()> {
-        self.memory[self.pointer] += 1;
+        // the pointer cannot be out of bounds
+        self.memory[self.pointer] = self.memory[self.pointer]
+            .checked_add(1)
+            .ok_or_else(|| anyhow::anyhow!("Value overflow"))?;
+
         Ok(())
     }
 
     fn decrement_value(&mut self) -> anyhow::Result<()> {
-        self.memory[self.pointer] -= 1;
+        // the pointer cannot be out of bounds
+        self.memory[self.pointer] = self.memory[self.pointer]
+            .checked_sub(1)
+            .ok_or_else(|| anyhow::anyhow!("Value underflow"))?;
+
         Ok(())
     }
 
     fn increment_pointer(&mut self) -> anyhow::Result<()> {
-        if self.pointer + 1 < self.memory.len() {
-            self.pointer += 1;
-        } else {
-            anyhow::bail!("Pointer out of bounds");
-        }
+        self.pointer = self
+            .pointer
+            .checked_add(1)
+            .ok_or_else(|| anyhow::anyhow!("Pointer out of bounds"))?;
 
         Ok(())
     }
 
     fn decrement_pointer(&mut self) -> anyhow::Result<()> {
-        if 0 < self.pointer {
-            self.pointer -= 1;
-        } else {
-            anyhow::bail!("Pointer out of bounds");
-        }
+        self.pointer = self
+            .pointer
+            .checked_sub(1)
+            .ok_or_else(|| anyhow::anyhow!("Pointer out of bounds"))?;
 
         Ok(())
     }
 
-    fn eval_loop(&mut self, loop_nodes: &Ast) -> anyhow::Result<()> {
-        self.eval(loop_nodes)?;
-
+    fn eval_loop(&mut self, ast: &Ast) -> anyhow::Result<()> {
         while self.memory[self.pointer] != 0 {
-            self.eval(loop_nodes)?;
+            self.eval(ast)?;
         }
 
         Ok(())
     }
 
     fn input(&mut self) -> anyhow::Result<()> {
-        let mut input = String::new();
+        let input = std::io::stdin()
+            .bytes()
+            .next()
+            .and_then(|b| b.ok())
+            .ok_or_else(|| anyhow::anyhow!("Failed to read input"))?;
 
-        std::io::stdin()
-            .read_line(&mut input)
-            .map_err(|e| anyhow::anyhow!("Failed to read input: {}", e))?;
-
-        if let Ok(value) = input.trim().parse::<u8>() {
-            self.memory[self.pointer] = value;
-        } else {
-            anyhow::bail!("Invalid input");
-        }
+        self.memory[self.pointer] = input;
 
         Ok(())
     }

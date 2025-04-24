@@ -3,5 +3,5 @@ mod lexer;
 mod parser;
 
 pub use context::Context;
-pub use lexer::Lexer;
-pub use parser::Parser;
+pub use lexer::{Lexer, Token, TokenStream};
+pub use parser::{Ast, AstNode, Parser};
