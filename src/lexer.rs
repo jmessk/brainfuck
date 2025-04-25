@@ -34,8 +34,7 @@ impl Lexer {
                 ']' => tokens.push(Token::LoopEnd),
                 '.' => tokens.push(Token::Output),
                 ',' => tokens.push(Token::Input),
-                ' ' | '\n' | '\r' | '\t' => {}
-                _ => anyhow::bail!("Unexpected character: {}", c),
+                _ => {}
             }
         }
 
