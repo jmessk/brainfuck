@@ -7,9 +7,13 @@ pub struct Context {
     pointer: usize,
 }
 
+impl Context {
+    const DEFAULT_MEM_SIZE: usize = 10_000;
+}
+
 impl Default for Context {
     fn default() -> Self {
-        Context::with_mem_size(10_000)
+        Context::with_mem_size(Self::DEFAULT_MEM_SIZE)
     }
 }
 
